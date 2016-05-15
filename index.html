@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ColladaSupport-for-ThreeJS</title>
+    <script src="./js/three.min.js"></script>
+    <script src="./js/ColladaLoader.js"></script>
+    <script src="./js/ColladaAnimation.js"></script>
+    <script src="./js/AnimationHandler.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #clickTip {
+            color: #fff;
+            position: absolute;
+            font-size: 32px;
+            top: 30px;
+            left: 30px;
+        }
+    </style>
+</head>
+<body>
+<div id="clickTip"><h1>ColladaSupport-for-ThreeJS</h1>[ click ] change animation</div>
+<script>
+    var camera, scene, renderer, animation;
+    var dae;
+
+    var aniNowIndex = 0;
+    var aniArr = [
+        {
+            "name": "hit",
+            "startIndex": 21,
+            "frameCount": 10
+        }, {
+            "name": "run",
+            "startIndex": 0,
+            "frameCount": 21
+        }, {
+            "name": "oh",
+            "startIndex": 31,
+            "frameCount": 10
+        }
+    ];
+
+    var loader = new THREE.ColladaLoader();
+    loader.options.convertUpAxis = true;
+    loader.load('./model/player.dae', function (collada) {
+        dae = collada.scene.getObjectByName("player");
+        dae.traverse(function (child) {
+            if (child instanceof THREE.SkinnedMesh) {
+                animation = new THREE.ColladaAnimation(child, child.geometry.animation);
+
+                playAnimation();
+            }
+        });
+        dae.rotation.y = Math.PI / 180 * -30;
+        dae.updateMatrix();
+        init();
+        animate();
+
+        window.onclick = playAnimation;
+    });
+
+    function playAnimation() {
+        aniNowIndex = aniNowIndex >= aniArr.length - 1 ? 0 : aniNowIndex + 1;
+        animation.playByFrame(aniArr[aniNowIndex].startIndex, aniArr[aniNowIndex].frameCount, -1);
+        console.log("play animation : " + aniArr[aniNowIndex].name);
+    }
+
+    function init() {
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+        camera.position.set(0, 100, 300);
+        camera.rotation.x = Math.PI / 180 * -10;
+        scene = new THREE.Scene();
+
+        // Add the COLLADA model
+        scene.add(dae);
+
+        scene.add(new THREE.AmbientLight(0xcccccc));
+        var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee);
+        directionalLight.position.set(0, 100, 100);
+        scene.add(directionalLight);
+
+        renderer = new THREE.WebGLRenderer();
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+    }
+
+
+    function animate() {
+        requestAnimationFrame(animate);
+        render();
+    }
+    // render
+    var clock = new THREE.Clock();
+    function render() {
+        THREE.AnimationHandler.update(clock.getDelta());
+        renderer.render(scene, camera);
+    }
+</script>
+</body>
+</html>
